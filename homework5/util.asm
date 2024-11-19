@@ -1,0 +1,102 @@
+CODESEG SEGMENT
+    ASSUME CS: CODESEG
+    PUBLIC PRINT_TAB, PRINT_NEWLINE, PRINT_NUMBER
+
+buffer_end DB 21 DUP(0)        ; 缓冲区
+
+PRINT_TAB PROC FAR
+    PUSH DX
+    PUSH AX
+    MOV DL, ' '
+    MOV AH, 02H
+    INT 21H
+    INT 21H
+    INT 21H
+    INT 21H
+    POP AX
+    POP DX
+    RET
+PRINT_TAB ENDP
+
+PRINT_NEWLINE PROC FAR
+    PUSH DX
+    PUSH AX
+    MOV DL, 13
+    MOV AH, 02H
+    INT 21H
+    MOV DL, 10
+    MOV AH, 02H
+    INT 21H
+    POP AX
+    POP DX
+    RET
+PRINT_NEWLINE ENDP
+
+PRINT_NUMBER PROC FAR
+    PUSH CX
+    PUSH BX
+    PUSH SI
+    PUSH DI
+    
+    XOR SI, SI
+    XOR DI, DI
+    MOV DI, OFFSET buffer_end
+
+CONVERT_LOOP:
+    PUSH AX
+    XOR AX, AX
+    MOV AX, DX
+    XOR DX, DX
+    XOR BX, BX
+    XOR CX, CX
+
+    MOV CX, 10
+    DIV CX
+    MOV BX, AX
+    
+    POP AX
+    DIV CX
+    PUSH BX
+    ADD DL, '0'
+    DEC DI
+    MOV [DI], DL
+    INC SI
+    POP DX
+    CMP DX, 0
+    JNE CONVERT_LOOP
+    CMP AX, 0
+    JNE CONVERT_LOOP
+
+    MOV BX, 10
+    SUB BX, SI
+
+PRINT_START:
+    MOV CX, SI
+    PRINT_LOOP:
+        MOV DL, [DI]
+        MOV AH, 02H
+        INT 21H
+        INC DI
+        LOOP PRINT_LOOP   
+
+PRINT_SPACE_LOOP:
+    CMP BX, 0                     ; 判断是否需要显示空格
+    JLE PRINT_END
+    MOV DL, ' '
+    MOV AH, 02H
+    INT 21H
+    DEC BX
+    JMP PRINT_SPACE_LOOP
+
+PRINT_END:
+    POP DI
+    POP SI
+    POP BX
+    POP CX
+    RET
+PRINT_NUMBER ENDP
+
+CODESEG ENDS
+END
+
+
